@@ -10,9 +10,13 @@ Copy-Item "$src\*" $dist -Recurse -Force
 Remove-Item "$dist\.gitignore" -Force -ErrorAction SilentlyContinue
 Remove-Item "$dist\build" -Recurse -Force -ErrorAction SilentlyContinue
 Remove-Item "$dist\tools" -Recurse -Force -ErrorAction SilentlyContinue
-Remove-Item "$dist\build-icons.mjs" -Force -ErrorAction SilentlyContinue
+Remove-Item "$dist\icons\build-icons.mjs" -Force -ErrorAction SilentlyContinue
 
 $zxp = Join-Path $root "aimeva.zxp"
+# Manifest must be strict-valid XML (Premiere silently skips the panel otherwise;
+# e.g. XML comments may NOT contain "--").
+try { [xml]$null = Get-Content "$dist\CSXS\manifest.xml" -Raw }
+catch { Write-Host "BUILD ABORTED: CSXS\manifest.xml is not valid XML:"; Write-Host $_.Exception.Message; exit 1 }
 $tempZip = Join-Path $root "dist-temp.zip"
 if (Test-Path $zxp) { Remove-Item $zxp -Force }
 if (Test-Path $tempZip) { Remove-Item $tempZip -Force }
@@ -28,5 +32,5 @@ $zip.Dispose()
 $hasManifest = $entries -contains "CSXS\manifest.xml"
 Write-Host "Created: $zxp ($(((Get-Item $zxp).Length / 1024).ToString('N1')) KB), $($entries.Count) entries, manifest=$hasManifest"
 if (-not $hasManifest) { Write-Host "WARNING: CSXS\manifest.xml missing from archive" }
-Write-Host "To sign (optional): ZXPSignCmd -sign dist aimeva.zxp aimeva-dev.p12 aimeva"
+Write-Host "To sign (for ZXP installer apps): installer\sign-zxp.ps1"
 Write-Host "For local dev-load: use install-zxp.ps1 (no signing required)."

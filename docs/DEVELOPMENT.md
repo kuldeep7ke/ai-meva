@@ -1,4 +1,4 @@
-# Aimeva — Development
+# AIMeva — Development
 
 Everything a developer needs: how the system is wired, how to run it, how to test, how to
 build/package.

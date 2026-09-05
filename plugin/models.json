@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "updated": "2026-09-05",
-  "description": "Aimeva AI model registry. Every entry is free to use with the chosen backend. The worker merges this (auto-fetched from GitHub) with the LIVE lists it discovers: installed Ollama tags + whatever models opencode currently has available. Nothing here is required to run the core features (beats/silence/reframe/sound run locally with no model).",
+  "description": "AIMeva AI model registry. Every entry is free to use with the chosen backend. The worker merges this (auto-fetched from GitHub) with the LIVE lists it discovers: installed Ollama tags + whatever models opencode currently has available. Nothing here is required to run the core features (beats/silence/reframe/sound run locally with no model).",
 
   "defaults": {
     "scene": "ollama:qwen3-vl:2b",

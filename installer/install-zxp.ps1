@@ -1,4 +1,4 @@
-# Installs the Aimeva CEP extension for Premiere Pro 2023+.
+# Installs the AIMeva CEP extension for Premiere Pro 2023+.
 # Stops Premiere, copies the extension folder into the system CEP extensions
 # directory (and the per-user copy as a fallback), and enables dev mode so the
 # extension shows under Window > Extensions.
@@ -9,7 +9,7 @@ $src  = Join-Path $root "..\extension"
 $systemTarget = "C:\Program Files\Common Files\Adobe\CEP\extensions\com.aimeva.cep"
 $userTarget   = Join-Path $env:APPDATA "Adobe\CEP\extensions\com.aimeva.cep"
 
-Write-Host "Aimeva installer"
+Write-Host "AIMeva installer"
 Write-Host "---------------"
 
 # 1. Stop Premiere so installed files aren't locked
@@ -54,9 +54,9 @@ Set-ItemProperty -Path "HKCU:\Software\Adobe\CSXS.11" -Name "LogLevel" -Value "6
 Write-Host "CEP debug mode enabled (CSXS.9-14)."
 
 # 4. Verify
-$installed = Test-Path "$systemTarget\CSXS\manifest.xml" -or (Test-Path "$userTarget\CSXS\manifest.xml")
+$installed = (Test-Path "$systemTarget\CSXS\manifest.xml") -or (Test-Path "$userTarget\CSXS\manifest.xml")
 if (-not $installed) { Write-Host "Verification failed - manifest not found."; exit 1 }
 Write-Host "Verified manifest present."
 Write-Host ""
-Write-Host "Done! Restart Premiere Pro, then: Window > Extensions > Aimeva"
+Write-Host "Done! Restart Premiere Pro, then: Window > Extensions > AIMeva"
 Write-Host "To also start the AI worker, run: .\installer\start-worker.bat"

@@ -1,4 +1,4 @@
-# Aimeva
+# AIMeva
 
 A **free, open-source (MIT)** AI editing assistant for **Adobe Premiere Pro 2023+**, shipped as a
 CEP extension (`com.aimeva.cep`). Everything runs locally — no accounts, no backend, no license
@@ -16,7 +16,7 @@ server, and no encrypted code, files, or data.
 ```powershell
 installer\install-zxp.bat     # install the CEP extension (stops Premiere, prompts for admin)
 installer\start-worker.bat    # launch the local AI worker on 127.0.0.1:8000
-# open Premiere Pro → Window → Extensions → Aimeva
+# open Premiere Pro → Window → Extensions → AIMeva
 ```
 
 Requirements: Premiere Pro 2023+, Python 3.11+. Optional: [Ollama](https://ollama.com) + `ollama pull qwen3:4b` for chat.

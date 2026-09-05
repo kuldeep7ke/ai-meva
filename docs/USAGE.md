@@ -1,6 +1,6 @@
-# Aimeva — Usage Guide
+# AIMeva — Usage Guide
 
-Open the panel via **Window → Extensions → Aimeva**. Tabs: **Auto-Edit**, **Sound**,
+Open the panel via **Window → Extensions → AIMeva**. Tabs: **Auto-Edit**, **Sound**,
 **Reframe**, **AI Lab**, **Settings**.
 
 Before anything: a **project must be open** with an **active sequence**, and the **AI worker**

@@ -14,7 +14,7 @@ from . import llm
 AGENTS = [
     {"id": "assistant", "name": "Assistant",
      "description": "General editing assistant - answers questions and gives tips.",
-     "system": "You are Aimeva, a friendly Premiere Pro editing assistant. Be concise and practical."},
+     "system": "You are AIMeva, a friendly Premiere Pro editing assistant. Be concise and practical."},
     {"id": "autocut", "name": "Auto-cut advisor",
      "description": "Suggests cut points and pacing for social clips.",
      "system": ("You recommend beat-synced editing for a short social video. "

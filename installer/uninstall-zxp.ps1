@@ -1,4 +1,4 @@
-# Removes the Aimeva extension (system + per-user copies) and resets CEP debug flag.
+# Removes the AIMeva extension (system + per-user copies) and resets CEP debug flag.
 $ErrorActionPreference = "SilentlyContinue"
 Get-Process -Name "Adobe Premiere Pro","PrPro","CEPHtmlEngine*" -ErrorAction SilentlyContinue |
   Stop-Process -Force -ErrorAction SilentlyContinue
@@ -12,4 +12,4 @@ foreach ($t in $targets) { if (Test-Path $t) { Remove-Item $t -Recurse -Force; W
   $k = "HKCU:\Software\Adobe\CSXS.$_"
   if (Test-Path $k) { Remove-ItemProperty -Path $k -Name "PlayerDebugMode" -ErrorAction SilentlyContinue }
 }
-Write-Host "Aimeva uninstalled. Restart Premiere Pro if it was running."
+Write-Host "AIMeva uninstalled. Restart Premiere Pro if it was running."

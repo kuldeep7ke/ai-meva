@@ -15,7 +15,11 @@ const hostScript = readFileSync(path.join(__dirname, "..", "extension", "jsx", "
 // ---------------------------------------------------------------- mock ---- 
 function StaticValue() { this.type = 0; this.value = undefined; }
 
-function buildPremiere() {
+// Real Premiere timebase: Sequence.timebase is a STRING of ticks-per-frame,
+// ticks run at 254016000000/sec. The mock mirrors that exactly.
+const TICKS = 254016000000;
+
+function buildPremiere(opt) {
   const log = [];
 
   function Time(t) { this._t = t; }
@@ -35,8 +39,8 @@ function buildPremiere() {
     const motionProps = { "Motion": { Scale: [], Position: [] } };
     return {
       projectItem: item,
-      start: Math.round(startSec * 30),
-      duration: Math.round(durSec * 30),
+      start: Math.round(startSec * TICKS),
+      duration: Math.round(durSec * TICKS),
       components: {
         numComponents: 1,
         0: {
@@ -74,7 +78,7 @@ function buildPremiere() {
     return t;
   }
 
-  function makeSeq(name, timebase) {
+  function makeSeq(name, fps) {
     const videoTracks = [track("V1"), track("V2")];
     videoTracks.numTracks = 2;
     const audioTracks = [track("A1")];
@@ -84,7 +88,7 @@ function buildPremiere() {
       numMarkers: 0,
       getMarker(i) { return markers._m[i]; },
       createMarker(tick) {
-        const mv = { _tick: tick, name: "", setName(n) { mv.name = n; }, getTime() { return { seconds: tick * timebase }; } };
+        const mv = { _tick: tick, name: "", setName(n) { mv.name = n; }, getTime() { return { seconds: tick / TICKS }; } };
         markers._m[markers.numMarkers] = mv;
         markers.numMarkers++;
         return mv;
@@ -92,17 +96,22 @@ function buildPremiere() {
     };
     const seq = {
       name,
-      timebase,
-      duration: 30 * 120,
+      timebase: String(Math.round(TICKS / fps)),
+      duration: TICKS * 120,
       markers,
       videoTracks,
       audioTracks,
       _playerSeconds: 10,
       _selectionItem: null,
       getPlayerPosition() { return { seconds: seq._playerSeconds }; },
-      setPlayerPosition(t) { seq._playerSeconds = (t && t._t !== undefined) ? t._t / 30 : (typeof t === "number" ? t / 30 : 0); log.push(["setPlayerPosition", seq._playerSeconds]); },
-      secondsToTicks(sec) { return Math.round(sec / timebase); },
+      setPlayerPosition(t) { seq._playerSeconds = (t && t._t !== undefined) ? t._t / TICKS : (typeof t === "number" ? t / TICKS : 0); log.push(["setPlayerPosition", seq._playerSeconds]); },
+      secondsToTicks(sec) { return Math.round(sec * TICKS); },
       getSelection() {
+        // Real Premiere returns a plain Array of TrackItems; the legacy
+        // object shape is kept for the old-path test below.
+        if (opt && opt.arraySelection) {
+          return seq._selectionItem ? [seq._selectionItem] : [];
+        }
         return {
           numItems: seq._selectionItem ? 1 : 0,
           getTrackItem() { return seq._selectionItem; }
@@ -116,15 +125,19 @@ function buildPremiere() {
   const clipA = projectItem("shoe.mp4", "NODE-AAA", "C:/media/shoe.mp4", { video: true, audio: true });
   const clipB = projectItem("talk.mov", "NODE-BBB", "C:/media/talk.mov", { video: true, audio: true });
 
-  const seq1 = makeSeq("Timeline 1", 1 / 30);
-  const seq2 = makeSeq("Timeline 2", 1 / 30);
+  const seq1 = makeSeq("Timeline 1", 30);
+  const seq2 = makeSeq("Timeline 2", 30);
   seq1.videoTracks[0].addClip(0, 40, clipA);
   seq1.videoTracks[1].addClip(10, 30, clipB);
   seq1.audioTracks[0].addClip(5, 60, clipB);
   seq1._selectionItem = seq1.videoTracks[0].clips[0];
   seq2.videoTracks[0].addClip(0, 40, clipB);
 
-  const rootItem = { name: "root", children: { numChildren: 2, 0: clipA, 1: clipB }, addItem(item) { const n = rootItem.children.numChildren; rootItem.children[n] = item; rootItem.children.numChildren++; } };
+  // NOTE: real Premiere ProjectItemCollection exposes numItems (NOT numChildren).
+  // The mock mirrors that exactly - a numChildren mock would hide find bugs.
+  const clipC = projectItem("nested.mp4", "NODE-CCC", "C:/media/bin/nested.mp4", { video: true });
+  const binX = { name: "bin", children: { numItems: 1, 0: clipC } };
+  const rootItem = { name: "root", children: { numItems: 3, 0: clipA, 1: binX, 2: clipB }, addItem(item) { const n = rootItem.children.numItems; rootItem.children[n] = item; rootItem.children.numItems++; } };
 
   const project = {
     name: "Test Project",
@@ -150,10 +163,10 @@ function buildPremiere() {
 }
 
 function makeContext(opt) {
-  const step = buildPremiere();
+  const step = buildPremiere(opt);
   const base = {
     app: step.app,
-    $: { engineName: "ExtendScript", fileName: "hostscript.jsx" },
+    $: { engineName: "ExtendScript", fileName: "hostscript.jsx", line: 1 },
     File: function (p) {
       this.fullName = p;
       this._lines = [];
@@ -199,6 +212,9 @@ test("env reads fresh sequence values", () => {
   assert.equal(d.project, "Test Project");
   assert.equal(d.playheadSec, 10);
   assert.equal(d.videoTracks, 2);
+  assert.equal(d.fps, 30);
+  assert.equal(d.ticksPerFrame, 8467200000);
+  assert.equal(d.durationSec, 120);
 });
 
 test("selectedClip returns the selected clip + mediaPath", () => {
@@ -207,6 +223,23 @@ test("selectedClip returns the selected clip + mediaPath", () => {
   assert.equal(d.selected, true);
   assert.equal(d.nodeId, "NODE-AAA");
   assert.equal(d.mediaPath, "C:/media/shoe.mp4");
+});
+
+test("REGRESSION (live panel 2026-09-06): array-shape getSelection resolves the clip", () => {
+  const c = makeContext({ arraySelection: true });
+  const d = expectOk(c.call("selectedClip"));
+  assert.equal(d.selected, true);
+  assert.equal(d.nodeId, "NODE-AAA");
+  assert.equal(d.mediaPath, "C:/media/shoe.mp4");
+  assert.equal(d.startSec, 0);
+  assert.equal(d.durationSec, 40);
+});
+
+test("empty array selection reports not-selected (not an error)", () => {
+  const c = makeContext({ arraySelection: true });
+  c.__step.seq1._selectionItem = null;
+  const d = expectOk(c.call("selectedClip"));
+  assert.equal(d.selected, false);
 });
 
 test("listClips walks video + audio tracks", () => {
@@ -221,6 +254,22 @@ test("mediaPath resolves by nodeId", () => {
   const c = makeContext();
   const d = expectOk(c.call("mediaPath", { nodeId: "NODE-BBB" }));
   assert.equal(d.mediaPath, "C:/media/talk.mov");
+});
+
+test("REGRESSION (live log 2026-09-06): findById walks numItems incl. nested bins", () => {
+  const c = makeContext();
+  const d = expectOk(c.call("mediaPath", { nodeId: "NODE-CCC" }));
+  assert.equal(d.mediaPath, "C:/media/bin/nested.mp4");
+  const ins = expectOk(c.call("insertClip", { nodeId: "NODE-CCC", second: 3 }));
+  assert.equal(ins.atSec, 3);
+});
+
+test("host errors carry the throw-site line (mkErr passes $.line)", () => {
+  const c = makeContext();
+  const res = c.call("mediaPath", { nodeId: "NOPE" });
+  assert.equal(res.ok, false);
+  assert.ok(res.error.includes("nodeId not found"));
+  assert.equal(typeof res.line, "number");
 });
 
 test("importFile imports + finds the item by name", () => {
@@ -315,4 +364,62 @@ test("selfTest dry-run reports every op", () => {
   assert.ok(ops.includes("env"));
   assert.ok(ops.includes("selectedClip"));
   assert.ok(d.steps.every((s) => s.ok));
+});
+
+// ---------------------------------------------------------------- worker.js GET regression ----
+const workerScript = readFileSync(path.join(__dirname, "..", "extension", "js", "worker.js"), "utf8");
+
+function makeWorkerContext(calls) {
+  const fakeWindow = {
+    AIMEVA: {
+      config: {
+        workerBase: "http://127.0.0.1:8000",
+        endpoints: {
+          health: "/health",
+          beats: "/analyze/beats",
+          scene: "/analyze/scene",
+          sound: "/sound/generate",
+          reframe: "/reframe",
+          models: "/models",
+          chat: "/chat",
+          agents: "/agents",
+          agentsRun: "/agents/run",
+          mcpList: "/mcp/list",
+          mcpCall: "/mcp/call",
+          opencode: "/opencode/models"
+        }
+      }
+    }
+  };
+  const context = vm.createContext({
+    window: fakeWindow,
+    fetch(url, opts) {
+      calls.push({ url, opts: opts || {} });
+      return Promise.resolve({ json: () => Promise.resolve({ ok: true }) });
+    }
+  });
+  vm.runInContext(workerScript, context, { filename: "worker.js" });
+  return fakeWindow.AIMEVA.worker;
+}
+
+test("REGRESSION (live panel 2026-09-06): GET calls send no body", async () => {
+  const calls = [];
+  const worker = makeWorkerContext(calls);
+  await worker.models();
+  await worker.agents();
+  await worker.mcpList();
+  assert.equal(calls.length, 3);
+  calls.forEach((c) => {
+    assert.equal(c.opts.method, "GET");
+    assert.ok(!("body" in c.opts), "GET must not carry a body, got: " + c.opts.body);
+  });
+});
+
+test("POST calls still send a JSON body", async () => {
+  const calls = [];
+  const worker = makeWorkerContext(calls);
+  await worker.chat({ task: "chat", prompt: "hi" });
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].opts.method, "POST");
+  assert.equal(JSON.parse(calls[0].opts.body).task, "chat");
 });

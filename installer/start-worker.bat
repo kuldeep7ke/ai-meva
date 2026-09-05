@@ -1,5 +1,5 @@
 @echo off
-REM Start the Aimeva AI worker (creates a venv on first run, then launches uvicorn).
+REM Start the AIMeva AI worker (creates a venv on first run, then launches uvicorn).
 set ROOT=%~dp0..
 set VENV=%ROOT%\ai-workers\.venv
 set PY=%VENV%\Scripts\python.exe
@@ -17,7 +17,7 @@ if not exist "%PY%" (
   "%PY%" -m pip install -e "%ROOT%\ai-workers" || goto :err
 )
 
-echo Starting Aimeva worker on http://127.0.0.1:8000 ...
+echo Starting AIMeva worker on http://127.0.0.1:8000 ...
 "%PY%" -m uvicorn ai_workers.index:app --host 127.0.0.1 --port 8000 --app-dir "%ROOT%\ai-workers"
 goto :eof
 

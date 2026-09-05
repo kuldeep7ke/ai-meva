@@ -62,7 +62,7 @@ window.AIMEVA = window.AIMEVA || {};
       var badge = m.source === "opencode"
         ? '<span class="tag" style="color:#e0a13a">opencode</span>'
         : m.source === "ollama"
-          ? '<span class="tag" style="color:#4f8cff">local</span>'
+          ? '<span class="tag" style="color:#ff8c1a">local</span>'
           : '<span class="tag" style="color:#17b864">free</span>';
       div.innerHTML = "<strong>" + escapeHtml(m.name || m.id) + "</strong>" + badge;
       div.title = (m.note || m.id);

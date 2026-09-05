@@ -1,4 +1,4 @@
-# Aimeva — API Reference
+# AIMeva — API Reference
 
 Two surfaces:
 
@@ -14,7 +14,7 @@ Two surfaces:
 Service index + endpoint list.
 
 ```json
-{ "name": "Aimeva Worker", "version": "0.1.0",
+{ "name": "AIMeva Worker", "version": "0.1.0",
   "endpoints": ["GET /health", "POST /analyze/beats", "..."] }
 ```
 
@@ -22,7 +22,7 @@ Service index + endpoint list.
 Liveness probe. Also reports tool availability.
 
 ```json
-{ "ok": true, "name": "Aimeva Worker", "version": "0.1.0",
+{ "ok": true, "name": "AIMeva Worker", "version": "0.1.0",
   "ffmpeg": true, "ollama": true, "tmp": "C:\\...\\ai-workers\\scratch" }
 ```
 
@@ -136,7 +136,7 @@ Body: `{ "task": "chat|script|title|captions|describe", "prompt": "", "model": "
 Built-in agents (asynchronous, LLM-backed).
 
 ```json
-{"agents":[{"id":"assistant","name":"Aimeva Assistant","description":"…"},{"id":"autocut","…"},
+{"agents":[{"id":"assistant","name":"AIMeva Assistant","description":"…"},{"id":"autocut","…"},
            {"id":"sound","…"},{"id":"title","…"},{"id":"editor","…"}]}
 ```
 

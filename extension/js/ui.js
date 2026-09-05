@@ -1,4 +1,4 @@
-// Aimeva panel controller. Wires tabs, host, worker, models, updater.
+// AIMeva panel controller. Wires tabs, host, worker, models, updater.
 window.AIMEVA = window.AIMEVA || {};
 window.AIMEVA.ui = (function () {
   var host = window.AIMEVA.host;
@@ -50,7 +50,8 @@ window.AIMEVA.ui = (function () {
   function requireClip() {
     return host.dispatch("selectedClip").then(function (c) {
       if (!c || !c.selected) {
-        throw new Error("Select a clip in the timeline first");
+        var why = (c && c.error) ? " [host: " + c.error + "]" : "";
+        throw new Error("Select a clip in the timeline first, then try again" + why);
       }
       state.clip = c;
       return c;
@@ -145,9 +146,15 @@ window.AIMEVA.ui = (function () {
   function runHighlights() {
     var btn = $("btnFindHighlights");
     busied(btn, true);
-    var model = $("sceneModel").value || "";
-    selectedMedia().then(function (path) {
-      return worker.scene(path, { model: model || undefined });
+    // Self-heal: worker may have come online after panel load with an empty dropdown.
+    var ready = ($("sceneModel").options.length && $("sceneModel").value)
+      ? Promise.resolve()
+      : models.load().then(function () { populateSceneModels(); });
+    ready.then(function () {
+      var model = $("sceneModel").value || "";
+      return selectedMedia().then(function (path) {
+        return worker.scene(path, { model: model || undefined });
+      });
     }).then(function (res) {
       if (res.error) throw new Error(res.error);
       state.highlights = res;
@@ -246,20 +253,22 @@ window.AIMEVA.ui = (function () {
       var sel = models.selected();
       populateSceneModels();
       if (sel) log("models loaded, active: " + sel.id + (res.opencode && res.opencode.length ? " (+opencode)" : ""));
-      else log(res && res.error ? "worker offline" : "models loaded");
-    }).catch(function (e) { log("models: " + e.message); });
+      else log(res && res.error ? "worker offline - showing default scene model" : "models loaded");
+    }).catch(function (e) {
+      populateSceneModels(); // worker unreachable: still offer the default scene model
+      log("models: " + e.message + " (worker offline?)");
+    });
   }
 
   function populateSceneModels() {
     var sel = $("sceneModel");
     var prev = sel.value;
+    sel.innerHTML = "";
     var all = models.flatten().filter(function (m) {
       return (m.capabilities || []).indexOf("vision") >= 0;
     });
     if (!all.length) {
-      sel.innerHTML = '<option value="ollama:qwen3-vl:2b">qwen3-vl:2b (default)</option>';
-      sel.value = prev === "" ? "ollama:qwen3-vl:2b" : prev;
-      return;
+      all = [{ id: "ollama:qwen3-vl:2b", name: "qwen3-vl:2b (default)" }];
     }
     all.forEach(function (m) {
       var opt = document.createElement("option");
@@ -267,7 +276,7 @@ window.AIMEVA.ui = (function () {
       opt.textContent = m.name || m.id;
       sel.appendChild(opt);
     });
-    if (prev) sel.value = prev;
+    sel.value = prev && document.querySelector('#sceneModel option[value="' + prev + '"]') ? prev : all[0].id;
   }
 
   function runAiTask() {
@@ -416,6 +425,8 @@ window.AIMEVA.ui = (function () {
         document.querySelectorAll(".tab").forEach(function (s) { s.classList.remove("active"); });
         tabBtn.classList.add("active");
         $("tab-" + tabBtn.dataset.tab).classList.add("active");
+        // Keep sequence/clip state fresh as the user moves around.
+        refreshEnv().catch(function () {});
       });
     });
 

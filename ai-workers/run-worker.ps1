@@ -1,4 +1,4 @@
-# Aimeva worker launcher. Keeps the packaged ffmpeg on PATH and starts uvicorn.
+# AIMeva worker launcher. Keeps the packaged ffmpeg on PATH and starts uvicorn.
 $ErrorActionPreference = "Stop"
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path
 $venv = Join-Path $root ".venv"

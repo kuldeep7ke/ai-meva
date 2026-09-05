@@ -56,7 +56,7 @@ def chat_vision(frames: list[str], prompt: str, model: str = "qwen3-vl:2b",
     for f in frames:
         with open(f, "rb") as fh:
             images.append(base64.b64encode(fh.read()).decode())
-    prompt_image = ("You are Aimeva, a premiere editing assistant. Look at the "
+    prompt_image = ("You are AIMeva, a premiere editing assistant. Look at the "
                     "sampled frames from a video clip. " + prompt)
     body = {
         "model": model,

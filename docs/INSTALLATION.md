@@ -1,6 +1,6 @@
-# Aimeva — Installation Guide
+# AIMeva — Installation Guide
 
-Install and run **Aimeva** for Premiere Pro. Two pieces:
+Install and run **AIMeva** for Premiere Pro. Two pieces:
 
 1. **AI worker** (Python + optional Ollama) — does the heavy lifting
 2. **CEP extension** (`com.aimeva.cep`) — the panel inside Premiere Pro
@@ -100,7 +100,7 @@ models (`GET /models` + `GET /opencode/models` on the worker) — no config file
 ## 5. Use it in Premiere
 
 1. Start Premiere Pro 2023+.
-2. **Window → Extensions → Aimeva.**
+2. **Window → Extensions → AIMeva.**
 3. Open a project with an active sequence.
 
 Every operation prints a proof trail to `%TEMP%\aimeva-host.log` (Premiere-side) and the panel
@@ -113,7 +113,7 @@ shows live status. The **Self Test** button on the Settings tab runs the full ho
 
 | Symptom | Likely cause | Fix |
 |---------|--------------|-----|
-| No "Aimeva" under Window → Extensions | Installed to `%APPDATA%` (Premiere 2023 scans system folder only) | Re-run `install-zxp.bat`, accept UAC, fully quit Premiere + Creative Cloud (`kill CEPHtmlEngine`), relaunch |
+| No "AIMeva" under Window → Extensions | Installed to `%APPDATA%` (Premiere 2023 scans system folder only) | Re-run `install-zxp.bat`, accept UAC, fully quit Premiere + Creative Cloud (`kill CEPHtmlEngine`), relaunch |
 | Panel opens but host ops fail | Stale `hostscript.jsx` or debug flag off | Reinstall; check `%TEMP%\aimeva-host.log`; verify `PlayerDebugMode=1` under `HKCU\Software\Adobe\CSXS.11` |
 | Worker `ffmpeg:false` in `/health` | Vendored binaries missing | Re-check `ai-workers/bin/`; ensure PATH resolves |
 | `ollama` not reachable | Ollama not running / not installed | Start Ollama, `ollama pull qwen3:4b`, refresh panel |

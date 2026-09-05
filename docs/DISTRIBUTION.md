@@ -1,6 +1,6 @@
-# Aimeva — Distribution Guide
+# AIMeva — Distribution Guide
 
-How to build, sign, install, and publish the **Aimeva** CEP extension (`.zxp`), plus how its
+How to build, sign, install, and publish the **AIMeva** CEP extension (`.zxp`), plus how its
 **auto-update** and **model auto-add** mechanics work.
 
 ## 1. Build the `.zxp`
@@ -11,8 +11,8 @@ See **[DEVELOPMENT.md](DEVELOPMENT.md)** for the run/test loop; the packaging st
 installer\build-zxp.ps1
 ```
 
-Produces `installer\dist\aimeva.zxp` (a ZIP with `CSXS/manifest.xml` at the root). The script
-verifies archive entries and the archived manifest before/after.
+Produces `installer\aimeva.zxp` (a ZIP with `CSXS/manifest.xml` at the root; staged first in
+`installer\dist\`). The script verifies archive entries and the archived manifest before/after.
 
 > The CEP manifest targets **Premiere Pro 23.0 – 99.9**, CEP 11, bundle id `com.aimeva.cep`,
 > with `--enable-nodejs` + `--mixed-context`. Do **not** re-add a default `xmlns` to the
@@ -28,10 +28,31 @@ verifies archive entries and the archived manifest before/after.
 
 ### Signing
 
-Development/local installs work **unsigned** or with the self-signed `aimeva-dev` cert flow
-described in the old plan. For public distribution, sign with an **Adobe cross-signed
-certificate** (or keep shipping the raw folder) — see `REBUILD_PLAN.md` Stage 3 for the
-release-gate note.
+`build-zxp.ps1` alone produces an **unsigned** package. Third-party installer apps
+(Anastasiya's ZXP/UXP Installer, aescripts ZXP Installer) **reject unsigned packages** with a
+bare "was not installed" dialog — that is a signing problem, not a manifest problem. Sign it:
+
+```powershell
+installer\sign-zxp.ps1
+```
+
+What it does:
+
+1. Rebuilds the staging dir from `extension/` (signed package always matches source).
+2. Generates a throwaway self-signed dev cert (`installer\tools\aimeva-dev.p12`, gitignored;
+   regenerated automatically if missing) — needs Adobe's `ZXPSignCmd.exe`, also in
+   `installer\tools\` (download once from Adobe-CEP/CEP-Resources → `ZXPSignCMD/4.1.3/x64`).
+3. Signs offline (no timestamp server) and runs `ZXPSignCmd -verify` + checks
+   `META-INF/signatures.xml` is in the archive.
+
+Expect installer apps to show the publisher as **unverified/unknown** for the self-signed
+build — that is normal for a free, self-distributed extension; installation proceeds.
+Premiere itself loads it because `install-zxp` enables `PlayerDebugMode`. For Adobe Exchange
+listing you would need an Adobe-issued certificate instead; for GitHub-release distribution
+the self-signed package is sufficient.
+
+Development/local installs work **unsigned** (`install-zxp.bat` copies the folder directly,
+no signing involved).
 
 ## 3. Auto-update (how it works)
 
@@ -43,8 +64,8 @@ release-gate note.
    GitHub **release** artifact (`github.com/kuldeep7ke/aimeva/releases/latest/download/aimeva.zxp`).
 3. The **model registry** is refreshed from `plugin/models.json` (curated defaults).
 
-To publish a release: bump `plugin/update.json` version → run `installer\build-zxp.ps1` → attach
-`installer\dist\aimeva.zxp` to a GitHub Release tagged so `latest` resolves (release name
+To publish a release: bump `plugin/update.json` version → run `installer\sign-zxp.ps1` → attach
+`installer\aimeva.zxp` to a GitHub Release tagged so `latest` resolves (release name
 `latest` or by default Latest release). Keep `plugin/*.json` merged on `master` before tagging.
 
 ## 4. Model registry & opencode free models
@@ -73,7 +94,7 @@ The full model strategy lives in **[MODELS.md](MODELS.md)**. In short:
 
 | Symptom | Fix |
 |---------|-----|
-| Extension doesn't appear under Window → Extensions | Reinstall to the **system** folder; kill `CEPHtmlEngine` + fully quit Premiere; check `PlayerDebugMode` |
+| Extension doesn't appear under Window → Extensions | Reinstall to the **system** folder; kill `CEPHtmlEngine` + fully quit Premiere; check `PlayerDebugMode`; validate `CSXS/manifest.xml` parses as strict XML (`build-zxp.ps1` checks this automatically) |
 | Update fetches new version but never prompts | Ensure `plugin/update.json` reachable at the raw `master` URL and `version` bumped |
 | opencode models list empty | No internet (keep builtin fallback) or no providers in `~/.local/share/opencode/auth.json`; run `GET /opencode/models` on the worker to see `provider_dirs`/`catalog_models` |
-| `.zxp` rejected by installer | Use `installer\install-zxp.bat` (folder copy) instead; ExMan-based routes are broken on Premiere 2023 on some machines
+| `.zxp` rejected ("was not installed") | Package is unsigned — run `installer\sign-zxp.ps1` and retry with the signed file (`install-zxp.bat` folder-copy always works unsigned)

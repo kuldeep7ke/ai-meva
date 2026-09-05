@@ -1,4 +1,4 @@
-// Aimeva panel configuration - single place for URLs & endpoints.
+// AIMeva panel configuration - single place for URLs & endpoints.
 window.AIMEVA = window.AIMEVA || {};
 
 window.AIMEVA.config = {

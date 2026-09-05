@@ -1,6 +1,6 @@
-# Aimeva — Models
+# AIMeva — Models
 
-Aimeva is **local-first**: the core features (`beats`, `silence`, `reframe`, `sound`) run with
+AIMeva is **local-first**: the core features (`beats`, `silence`, `reframe`, `sound`) run with
 **no model at all**. Models are only needed for the *text/vision* features (chat, clip
 descriptions, scene summaries, agents). This guide explains where the panel gets its model list
 and how to make the right models available.

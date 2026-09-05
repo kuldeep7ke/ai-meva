@@ -1,5 +1,5 @@
 // ===========================================================================
-// Aimeva CEP host (ExtendScript) - Premiere Pro 2023+.
+// AIMeva CEP host (ExtendScript) - Premiere Pro 2023+.
 // Stateless JSON dispatch: the panel sends {op, params}, the host resolves
 // live Premiere objects for EVERY call and returns {ok, data} | {ok, error}.
 // Never keeps object references between calls (no more "does not have a value").
@@ -170,12 +170,18 @@ var __host = (function hostModule() {
     return { prj: prj, seq: seq };
   }
 
+  var TICKS_PER_SECOND = 254016000000; // Premiere tick rate (ticks per second)
+
   function seqTimebase(seq) {
-    try { return seq.timebase; } catch (e) { return 0; }
+    // Sequence.timebase = ticks per FRAME, as a string (e.g. "10594584000" at 23.976fps).
+    try { var tb = Number(seq.timebase); return (tb > 0) ? tb : 0; } catch (e) { return 0; }
+  }
+  function seqFps(seq) {
+    var tb = seqTimebase(seq);
+    return (tb > 0) ? (TICKS_PER_SECOND / tb) : 0;
   }
   function ticksToSec(seq, ticks) {
-    var tb = seqTimebase(seq);
-    return (tb > 0) ? (ticks * tb) : 0;
+    return Number(ticks) / TICKS_PER_SECOND;
   }
   function secToTicks(seq, sec) {
     return seq.secondsToTicks(sec);
@@ -208,8 +214,9 @@ var __host = (function hostModule() {
     try {
       var kids = rootItem.children;
       if (!kids) return null;
-      for (var i = 0; i < kids.numChildren; i++) {
+      for (var i = 0; i < kids.numItems; i++) {
         var child = kids[i];
+        if (!child) continue;
         var hit = findById(child, targetId);
         if (hit) return hit;
       }
@@ -226,7 +233,7 @@ var __host = (function hostModule() {
       engine: $.engineName,
       host: app.name,
       ppver: String(app.version),
-      hostScript: (typeof $ !== "undefined") ? ($.fileName || "?") : "?"
+      hostScript: (typeof $ !== "undefined") ? ($.fileName || "hostscript.jsx") : "hostscript.jsx"
     };
   }
 
@@ -238,8 +245,8 @@ var __host = (function hostModule() {
     var seq = activeSeq();
     if (!seq) { env.error = "no active sequence"; return env; }
     env.sequence = String(seq.name);
-    env.timebase = seqTimebase(seq);
-    env.fps = env.timebase > 0 ? Math.round(1 / env.timebase) : 0;
+    env.ticksPerFrame = seqTimebase(seq);
+    env.fps = Math.round(seqFps(seq) * 100) / 100;
     env.playheadSec = playheadSec(seq);
     try { env.durationSec = ticksToSec(seq, seq.duration); } catch (e) {}
     var markers = [];
@@ -265,10 +272,21 @@ var __host = (function hostModule() {
     if (!seq) return { selected: false };
     try {
       var sel = seq.getSelection();
-      if (!sel || !sel.numItems || sel.numItems === 0) return { selected: false };
+      // Premiere returns an Array of TrackItems; accept the legacy
+      // { numItems, getTrackItem(i) } shape too. Anything else = no selection.
+      var items = [];
+      if (sel) {
+        if (typeof sel.numItems === "number" && typeof sel.getTrackItem === "function") {
+          for (var i = 0; i < sel.numItems; i++) items.push(sel.getTrackItem(i));
+        } else if (typeof sel.length === "number") {
+          for (var j = 0; j < sel.length; j++) items.push(sel[j]);
+        }
+      }
+      if (items.length === 0) return { selected: false };
       var out = null;
-      for (var i = 0; i < sel.numItems; i++) {
-        var ti = sel.getTrackItem(i);
+      for (var k = 0; k < items.length; k++) {
+        var ti = items[k];
+        if (!ti) continue;
         var pi = ti.projectItem;
         if (!pi) continue;
         var info = {
@@ -338,38 +356,42 @@ var __host = (function hostModule() {
 
   function opMediaPath(params) {
     var prj = project();
-    if (!prj) throw mkErr("no project open");
+    if (!prj) throw mkErr("no project open", $.line);
     var item = findById(prj.rootItem, String(params.nodeId));
-    if (!item) throw mkErr("nodeId not found: " + params.nodeId);
+    if (!item) throw mkErr("nodeId not found: " + params.nodeId, $.line);
     return { nodeId: params.nodeId, name: String(item.name), mediaPath: String(item.getMediaPath() || "") };
   }
 
   function opImportFile(params) {
     var prj = project();
-    if (!prj) throw mkErr("no project open");
+    if (!prj) throw mkErr("no project open", $.line);
     var path = String(params.path || "");
-    if (path.length === 0) throw mkErr("path required");
+    if (path.length === 0) throw mkErr("path required", $.line);
     prj.importFiles([path], true, prj.rootItem, false);
     var base = path.replace(/\\/g, "/").split("/").pop();
     var found = null;
     function findBin(rootItem) {
+      if (found) return;
       try {
         var kids = rootItem.children;
-        for (var i = 0; i < kids.numChildren; i++) {
+        if (!kids) return;
+        for (var i = 0; i < kids.numItems; i++) {
           var child = kids[i];
+          if (!child) continue;
           if (String(child.name) === base) { found = child; return; }
           findBin(child);
+          if (found) return;
         }
       } catch (e) {}
     }
     findBin(prj.rootItem);
-    if (!found) throw mkErr("imported but could not locate '" + base + "'");
+    if (!found) throw mkErr("imported but could not locate '" + base + "'", $.line);
     return { nodeId: idOf(found), name: String(found.name), mediaPath: String(found.getMediaPath() || ""), importedFrom: path };
   }
 
   function opAddMarkers(params) {
     var seq = activeSeq();
-    if (!seq) throw mkErr("no active sequence");
+    if (!seq) throw mkErr("no active sequence", $.line);
     var times = params.times || [];
     var labels = params.labels || [];
     var added = [];
@@ -393,10 +415,10 @@ var __host = (function hostModule() {
 
   function opInsertClip(params) {
     var prj = project(), seq = activeSeq();
-    if (!prj) throw mkErr("no project open");
-    if (!seq) throw mkErr("no active sequence");
+    if (!prj) throw mkErr("no project open", $.line);
+    if (!seq) throw mkErr("no active sequence", $.line);
     var item = findById(prj.rootItem, String(params.nodeId));
-    if (!item) throw mkErr("nodeId not found: " + params.nodeId);
+    if (!item) throw mkErr("nodeId not found: " + params.nodeId, $.line);
     var sec = Number(params.second);
     if (isNaN(sec) || sec < 0) sec = playheadSec(seq);
     var audioOnly = !!params.audioOnly;
@@ -410,7 +432,7 @@ var __host = (function hostModule() {
         seq.insertClip(item, secToTicks(seq, sec), -1, 0);
         method = "insertClip(frames)";
       } catch (e2) {
-        throw mkErr("insertClip failed: " + String(e1.message || e1) + " / " + String(e2.message || e2));
+        throw mkErr("insertClip failed: " + String(e1.message || e1) + " / " + String(e2.message || e2), $.line);
       }
     }
     return { nodeId: params.nodeId, atSec: sec, audioOnly: audioOnly, method: method, playheadSec: playheadSec(seq) };
@@ -419,7 +441,7 @@ var __host = (function hostModule() {
   function opAutoCut(params) {
     // v1 = markers at the plan times; optionally insert one clip at the first time
     var seq = activeSeq();
-    if (!seq) throw mkErr("no active sequence");
+    if (!seq) throw mkErr("no active sequence", $.line);
     var res = opAddMarkers({ times: params.times || [], labels: params.labels || [] });
     // find a clip to lay down at cut points (project item id, imported already)
     if (params.insertNodeId) {
@@ -441,7 +463,7 @@ var __host = (function hostModule() {
 
   function opApplySilencePlan(params) {
     var seq = activeSeq();
-    if (!seq) throw mkErr("no active sequence");
+    if (!seq) throw mkErr("no active sequence", $.line);
     var regions = params.regions || [];
     var starts = [];
     for (var i = 0; i < regions.length; i++) {
@@ -479,7 +501,7 @@ var __host = (function hostModule() {
 
   function opApplyReframe(params) {
     var seq = activeSeq();
-    if (!seq) throw mkErr("no active sequence");
+    if (!seq) throw mkErr("no active sequence", $.line);
     var nodeId = params.nodeId;
     var ti;
     if (nodeId) {
@@ -488,7 +510,7 @@ var __host = (function hostModule() {
       var sel = selectedClipInfo(seq);
       if (sel.selected) ti = findTrackItemByNodeId(seq, sel.nodeId);
     }
-    if (!ti) throw mkErr("no target clip (pass nodeId or select a clip)");
+    if (!ti) throw mkErr("no target clip (pass nodeId or select a clip)", $.line);
 
     var applied = [];
     var comps = ti.components;
@@ -499,7 +521,7 @@ var __host = (function hostModule() {
       try { dn = String(comp.displayName || comp.name || ""); } catch (e) {}
       if (dn === "Motion" || dn === "motion") { motion = comp; break; }
     }
-    if (!motion) throw mkErr("Motion component not found on clip");
+    if (!motion) throw mkErr("Motion component not found on clip", $.line);
 
     function setProp(comp, propName, valueArray, typeName) {
       var props = comp.properties;
@@ -550,7 +572,7 @@ var __host = (function hostModule() {
     if (!dryRun) {
       run("addMarkers@playhead", function(){
         var seq = activeSeq();
-        if (!seq) throw mkErr("no active sequence");
+        if (!seq) throw mkErr("no active sequence", $.line);
         return opAddMarkers({ times: [playheadSec(seq)], labels: ["aimeva-selftest"] });
       });
       if (params.importPath) {
@@ -571,8 +593,9 @@ var __host = (function hostModule() {
   // -------------------------------------------------------------------------
   // Dispatch
   // -------------------------------------------------------------------------
-  function mkErr(msg) {
+  function mkErr(msg, line) {
     var e = new Error(String(msg));
+    if (line !== undefined) e.line = line; // sloppy mode: silently ignored if read-only
     return e;
   }
 

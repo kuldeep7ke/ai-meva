@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Aimeva CEP panel for Premiere Pro 2023+ (CEP 11). -->
+<!-- AIMeva CEP panel for Premiere Pro 2023+ (CEP 11). -->
 <!-- Proven rules for THIS machine (see docs/MEMORY.md):
      - no default xmlns attribute (CEP silently skips manifests that declare one)
-     - no --v=0 CEF flag -->
-<ExtensionManifest ExtensionBundleId="com.aimeva.cep" ExtensionBundleName="Aimeva" ExtensionBundleVersion="0.1.0" Version="11.0">
+     - no v0 CEF flag (the flag literally named dash dash v equals zero) -->
+<ExtensionManifest ExtensionBundleId="com.aimeva.cep" ExtensionBundleName="AIMeva" ExtensionBundleVersion="0.1.0" Version="11.0">
   <ExtensionList>
     <Extension Id="com.aimeva.cep.panel" Version="0.1.0" />
   </ExtensionList>
@@ -35,7 +35,10 @@
         </Lifecycle>
         <UI>
           <Type>Panel</Type>
-          <Menu>Aimeva</Menu>
+          <Menu>AIMeva</Menu>
+          <Icons>
+            <Default>./icons/icon-48.png</Default>
+          </Icons>
           <Geometry>
             <Size>
               <Height>620</Height>

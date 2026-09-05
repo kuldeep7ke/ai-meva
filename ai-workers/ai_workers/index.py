@@ -1,4 +1,4 @@
-"""Aimeva AI worker - one FastAPI service on 127.0.0.1:8000.
+"""AIMeva AI worker - one FastAPI service on 127.0.0.1:8000.
 Every endpoint accepts a JSON body with local media paths (or multipart upload).
 Run: ai-workers/start-worker.bat   (creates a venv, installs deps, launches uvicorn)
 """
@@ -19,7 +19,7 @@ from pydantic import BaseModel, Field
 from . import agents, audio, llm, mcp_server, media, opencode_model, reframe, sound
 from .media import probe
 
-app = FastAPI(title="Aimeva Worker", version="0.1.0")
+app = FastAPI(title="AIMeva Worker", version="0.1.0")
 
 CORS = None
 try:
@@ -96,7 +96,7 @@ def _cleanup_upload(upload_path: str | None):
 @app.get("/")
 def root():
     return {
-        "name": "Aimeva Worker",
+        "name": "AIMeva Worker",
         "version": "0.1.0",
         "endpoints": [
             "GET /health", "POST /analyze/beats", "POST /analyze/scene",
@@ -118,7 +118,7 @@ def health():
         ff = False
     return {
         "ok": True,
-        "name": "Aimeva Worker",
+        "name": "AIMeva Worker",
         "version": "0.1.0",
         "ffmpeg": ff,
         "ollama": ol,
@@ -272,7 +272,7 @@ def _auto_prompt(task: str) -> str:
         "title": "Suggest 5 punchy titles for a short-form video.",
         "captions": "Write engaging short captions for a social video.",
         "describe": "Describe a short video clip and suggest 3 captions.",
-    }.get(task, "You are Aimeva, a Premiere Pro editing assistant.")
+    }.get(task, "You are AIMeva, a Premiere Pro editing assistant.")
 
 
 @app.get("/agents")

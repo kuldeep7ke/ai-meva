@@ -1,8 +1,8 @@
-# Aimeva — Documentation
+# AIMeva — Documentation
 
 > Repo root: [`../README.md`](../README.md) — this folder is the full documentation site.
 
-Aimeva is a free, open-source (MIT) CEP extension for Adobe Premiere Pro 2023+ with a
+AIMeva is a free, open-source (MIT) CEP extension for Adobe Premiere Pro 2023+ with a
 local-first AI worker. No backend, no accounts, no license server, no encrypted files.
 
 ## Repository layout
@@ -47,10 +47,10 @@ local-first AI worker. No backend, no accounts, no license server, no encrypted 
 ```powershell
 installer\install-zxp.bat     # install into the system CEP folder (Premiere stopped, UAC prompt)
 installer\start-worker.bat    # AI worker on 127.0.0.1:8000 (creates ai-workers\.venv on first run)
-# Premiere Pro 2023+ → Window → Extensions → Aimeva
+# Premiere Pro 2023+ → Window → Extensions → AIMeva
 ```
 
 ```powershell
 Invoke-RestMethod http://127.0.0.1:8000/health
-# {"ok":true,"name":"Aimeva Worker","version":"0.1.0","ffmpeg":true,"ollama":...}
+# {"ok":true,"name":"AIMeva Worker","version":"0.1.0","ffmpeg":true,"ollama":...}
 ```

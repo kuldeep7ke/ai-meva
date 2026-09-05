@@ -1,4 +1,4 @@
-# Aimeva — Memory Capsule
+# AIMeva — Memory Capsule
 
 > Developer memory for resuming work. Update after every session.
 
@@ -54,7 +54,7 @@ user friendly, no obfuscation*.
 |----------|-----------|
 | **CEP-only, single product `com.aimeva.cep`** | UXP can't run on Premiere 2023 (25.6+ only). Old `ai-meva-plugin` UXP + `.ccx` route frozen (gitignored on disk). |
 | **Stateless host: `__host.dispatch(json)` only** | The old `roots` R0..Rn ref cache threw `) does not have a value` on sequence switches. Every op re-resolves `app.project` → `activeSequence` → `nodeId` fresh; whole flows in ONE atomic call; file-scope `var __host` (NOT `this.__host`, NO `"use strict"`). |
-| **Manifest proven rules** | No default `xmlns` on `<ExtensionManifest>`; no `--v=0` CEF flag; `--enable-nodejs` + `--mixed-context`; CSXS 11.0; ExtensionBundleId com.aimeva.cep. Violations = Premiere silently skips the panel. |
+| **Manifest proven rules** | No default `xmlns` on `<ExtensionManifest>`; no `--v=0` CEF flag; `--enable-nodejs` + `--mixed-context`; CSXS 11.0; ExtensionBundleId com.aimeva.cep. **XML comments must NOT contain `--`** (broke parsing → panel silently missing; `build-zxp.ps1` now validates). Violations = Premiere silently skips the panel. |
 | **Worker on `127.0.0.1:8000`** | Single FastAPI app; JSON bodies with local file paths (no uploads); CORS `*`; full reference in `docs/API.md`. |
 | **numpy-only audio** | 16 kHz mono, spectral-flux onsets + tempo autocorrelation, intensity 1–5 → grid subsets; silence = smoothed RMS below noise floor. Host snaps to `timebase` ticks. |
 | **Vision = 1 request, small frames** | `images` = raw base64 strings (NOT part objects — Ollama 400s on part objects), `keep_alive 30m`, temperature 0, internal timeout 600. Frames 256px, scene default `frames=1`. |
@@ -69,7 +69,7 @@ user friendly, no obfuscation*.
 
 ## 4. Operational facts & gotchas
 
-**Ports:** Aimeva worker `8000` · Ollama `11434`.
+**Ports:** AIMeva worker `8000` · Ollama `11434`.
 
 **Endpoints (compact — full detail in `docs/API.md`):**
 
@@ -108,7 +108,8 @@ instant `auto_highlights`). The worker does **not** crash — it's genuinely slo
 Consequence: default query paths avoid vision; the scene endpoint defaults to `frames=1`.
 
 **Git hygiene — do NOT commit:** `.venv/`, `ai-workers/bin/*.exe*`, `scratch/`,
-`installer/dist/`, `*.zxp`, `ai-meva-plugin/`, `*.egg-info/`.
+`installer/dist/`, `installer/tools/` (ZXPSignCmd + dev `.p12`), `*.zxp`,
+`ai-meva-plugin/`, `*.egg-info/`.
 
 ---
 
@@ -130,15 +131,54 @@ Consequence: default query paths avoid vision; the scene endpoint defaults to `f
 - [x] Scene endpoint graceful degradation proven (600s read-timeout → clean 200 + instant
       highlights). Root cause of earlier "connection reset" probes = **my own overlapping worker
       restarts**, not a worker bug.
-- [x] Installer chain: `build-zxp.ps1` (→ 42.9 KB zxp, 23 entries, manifest verified) ·
-      `install-zxp`/`uninstall-zxp`/`start-worker`.
+- [x] Installer chain: `build-zxp.ps1` + **`sign-zxp.ps1` (self-signed dev cert via
+      Adobe ZXPSignCmd 4.1.3, offline, `Signature verified successfully`, META-INF present)** ·
+      `install-zxp`/`uninstall-zxp`/`start-worker`. Unsigned `.zxp` is rejected by installer
+      apps ("was not installed") — signing fixed that route.
 - [x] **Docs restructured** (this session): repo-root `README.md`; `docs/` hub +
       new **MODELS.md**, **API.md**, **DEVELOPMENT.md**; USAGE/INSTALLATION/DISTRIBUTION/
       REBUILD_PLAN/MEMORY updated; all 30 `.md` local links verified.
-- [x] Commit `38d67ff` pushed to `kuldeep7ke/aimeva` **master**.
+- [x] **Timebase fixed (2026-09-06, from live self-test `fps:0`).** `Sequence.timebase`
+      is ticks-per-FRAME as a string (`"10594584000"` @23.976), not seconds — old code did
+      `ticks * tb` and `fps = 1/tb`. Now: `TICKS_PER_SECOND = 254016000000`,
+      `ticksToSec = ticks/TICKS`, `env.fps` real (≈23.98), `env.ticksPerFrame` raw.
+      Markers/inserts were never affected (native `secondsToTicks`); only displayed
+      fps/durations were wrong. Mock mirrors real timebase; env test asserts fps=30.
+- [x] **Live-log bug fixed (2026-09-06): `insertSound → imported but could not locate`.**
+      Root cause: project-tree walks used `kids.numChildren` — real Premiere
+      `ProjectItemCollection` exposes **`numItems`**, so `findById`/`opImportFile` never
+      iterated (broke `importFile` locate, `mediaPath`, `insertClip` by nodeId). The VM harness
+      mock encoded the same wrong property, hiding it — mock now uses `numItems` + a nested
+      bin, with regression tests. Bonus: `mkErr` now takes `$.line`, so host errors report the
+      real throw-site line instead of every error claiming the `mkErr` definition line.
+      Tests: `tests/host.test.mjs` **22/22** (new tests verified to FAIL on pre-fix code).
+- [x] **Renamed display name Aimeva → AIMeva** (panel title/menu/BundleName, installer
+      banners, worker `/health` name + AI persona, docs). Stable IDs untouched: bundle id
+      `com.aimeva.cep`, folder names, `%TEMP%\aimeva-host.log`, repo/URLs, `AIMEVA` JS namespace.
+- [x] **Scene dropdown empty → fixed.** Root cause: models load once at panel boot; if the worker
+      was offline then, the select stayed empty forever (+ dup-append bug on refresh). Now:
+      options cleared before populate, default `ollama:qwen3-vl:2b` fallback also on load
+      failure, and Find-highlights self-heals (reloads models if dropdown empty). Tab switches
+      refresh the Sequence/env summary.
+- [x] **Pro UI redesign, brand `#ff7700`.** New dark theme (orange primary/ghost buttons, focus
+      rings, pills, status bar), header uses project `icons/icon-48.png` + favicon, manifest
+      declares `<Icons><Default>./icons/icon-48.png</Default></Icons>`. All JS-referenced
+      class names / `--vars` preserved; `node --check` clean, host tests 22/22.
+- [x] **Panel GET broken → fixed (2026-09-06, `models: Failed to execute 'fetch'`).**
+      `worker.js call()` attached a JSON body to GET requests — fetch throws
+      `Request with GET/HEAD method cannot have body`. Killed models grid, agents, MCP tools
+      (health dot worked because it uses its own GET). Now body only on POST; VM tests load
+      the real `worker.js` with a stubbed fetch (GET = no body, POST = JSON body).
+- [x] **Selection false-positive → fixed (2026-09-06).** `selectedClipInfo` assumed
+      `{numItems, getTrackItem()}` but Premiere returns a plain Array → always "not
+      selected". Accepts both shapes; `requireClip` message now appends the host's
+      underlying `[host: ...]` reason. Harness covers both selection shapes.
+- [x] Commits `38d67ff` (rebuild) + `7d31922` (docs restructure) pushed to
+      `kuldeep7ke/aimeva` **master**.
 
 ### Uncommitted work
-- [ ] docs restructure (root README + MODELS/API/DEVELOPMENT + edits) — **not yet committed**
+- [ ] This session: AIMeva rename, dropdown self-heal, orange redesign, insertSound numItems
+      fix, GET-body fix, selection dual-shape, timebase fix, sign-zxp + tests at 22/22.
 
 ### Open risks & next steps
 - [ ] **Acceptance gate:** run Settings → **Self Test** inside real Premiere Pro 2023

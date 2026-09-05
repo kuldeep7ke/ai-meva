@@ -1,4 +1,4 @@
-// Tiny HTTP client for the local Aimeva worker (FastAPI on 127.0.0.1:8000).
+// Tiny HTTP client for the local AIMeva worker (FastAPI on 127.0.0.1:8000).
 // Every POST takes a JSON body; workers accept local media paths directly.
 window.AIMEVA = window.AIMEVA || {};
 
@@ -9,11 +9,14 @@ window.AIMEVA = window.AIMEVA || {};
 
   function call(path, body, method) {
     var headers = { "Content-Type": "application/json" };
-    return fetch(getUrl(path), {
-      method: method || "POST",
-      headers: headers,
-      body: body !== undefined ? JSON.stringify(body) : undefined
-    }).then(function (r) {
+    var m = method || "POST";
+    var opts = { method: m, headers: headers };
+    // GET/HEAD must not carry a body - fetch throws
+    // "Request with GET/HEAD method cannot have body" otherwise.
+    if (m !== "GET" && m !== "HEAD" && body !== undefined) {
+      opts.body = JSON.stringify(body);
+    }
+    return fetch(getUrl(path), opts).then(function (r) {
       return r.json().catch(function () { return { error: "non-JSON response: " + r.status }; });
     });
   }
