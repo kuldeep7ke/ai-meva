@@ -75,15 +75,10 @@ Press **Detect Highlights**. Two layers:
 
 ### Models
 
-The **Settings** tab merges three sources (`GET /models`):
-
-| Source | Meaning |
-|--------|---------|
-| `curated` | From `plugin/models.json` — sensible defaults & the panel's dropdown |
-| `ollama` | Whatever you've `ollama pull`ed (auto-detected, auto-added) |
-| `opencode` | Free models opencode defines (`GET /opencode/models`) — auto-added when a free proxy is reachable; listed even offline with an explicit note |
-
-Check **Tools → reset/refresh** or the panel Update button to re-scan.
+The **Settings** tab merges three sources: the curated registry (`plugin/models.json`), your
+live Ollama install, and opencode free models — see **[MODELS.md](MODELS.md)** for the full
+strategy, pull commands, and what's offline vs. online. Check **Tools → reset/refresh** or the
+panel Update button to re-scan.
 
 ---
 

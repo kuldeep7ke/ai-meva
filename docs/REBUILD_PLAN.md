@@ -8,7 +8,7 @@
 > CEP-only (UXP frozen), self-signed/dev install route, **no backend or licensing** (now free &
 > open-source, per product direction), markers-first silence, single repo package source
 > (`extension/`). Live worker endpoints verified; the remaining acceptance gate is running the
-> panel's Settings → **Self Test** inside real Premiere Pro 2023 (see `docs/MEMORY.md` §5).
+> panel's Settings → **Self Test** inside real Premiere Pro 2023 (see `MEMORY.md` §5).
 
 ## 0. Why we rebuild (root causes of the current failures)
 

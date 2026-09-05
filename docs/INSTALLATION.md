@@ -79,6 +79,9 @@ If you want the worker to survive closing the terminal, right-click `installer\s
 
 ## 4. Install Ollama models (recommended)
 
+See **[MODELS.md](MODELS.md)** for the full model strategy (curated registry, opencode free
+models, offline/online rules). Minimum to get value:
+
 ```powershell
 ollama pull qwen3:4b        # chat / titles / autocut plans
 ollama pull qwen3-vl:2b     # vision: describe clips, scene summaries

@@ -5,6 +5,8 @@ How to build, sign, install, and publish the **Aimeva** CEP extension (`.zxp`), 
 
 ## 1. Build the `.zxp`
 
+See **[DEVELOPMENT.md](DEVELOPMENT.md)** for the run/test loop; the packaging step itself:
+
 ```powershell
 installer\build-zxp.ps1
 ```
@@ -28,7 +30,7 @@ verifies archive entries and the archived manifest before/after.
 
 Development/local installs work **unsigned** or with the self-signed `aimeva-dev` cert flow
 described in the old plan. For public distribution, sign with an **Adobe cross-signed
-certificate** (or keep shipping the raw folder) — see `docs/REBUILD_PLAN.md` Stage 3 for the
+certificate** (or keep shipping the raw folder) — see `REBUILD_PLAN.md` Stage 3 for the
 release-gate note.
 
 ## 3. Auto-update (how it works)
@@ -46,6 +48,8 @@ To publish a release: bump `plugin/update.json` version → run `installer\build
 `latest` or by default Latest release). Keep `plugin/*.json` merged on `master` before tagging.
 
 ## 4. Model registry & opencode free models
+
+The full model strategy lives in **[MODELS.md](MODELS.md)**. In short:
 
 - `plugin/models.json` — curated list (Ollama families by task + opencode free candidates with
   a `opencode_media_task_keywords` block the worker uses to decide what's "useful for media").
