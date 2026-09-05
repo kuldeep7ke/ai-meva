@@ -15,6 +15,7 @@ tests/node_modules/
 
 # user/private data
 .env
+.rnd
 *.db
 *.db-shm
 *.db-wal
