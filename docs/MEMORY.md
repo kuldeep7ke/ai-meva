@@ -177,8 +177,9 @@ Consequence: default query paths avoid vision; the scene endpoint defaults to `f
       `kuldeep7ke/aimeva` **master**.
 
 ### Uncommitted work
-- [ ] This session: AIMeva rename, dropdown self-heal, orange redesign, insertSound numItems
-      fix, GET-body fix, selection dual-shape, timebase fix, sign-zxp + tests at 22/22.
+- [x] All of the above committed as `39ac395` and pushed to `master`; system install
+      refreshed (elevated robocopy, all markers verified in
+      `C:\Program Files\Common Files\Adobe\CEP\extensions\com.aimeva.cep`).
 
 ### Open risks & next steps
 - [ ] **Acceptance gate:** run Settings → **Self Test** inside real Premiere Pro 2023
