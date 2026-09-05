@@ -2,7 +2,10 @@
 extension/dist/
 extension/build/
 installer/dist/
-installer/tools/
+# signing tools: ZXPSignCmd + dev cert are tracked; anything else in tools/ is not
+installer/tools/*
+!installer/tools/ZXPSignCmd.exe
+!installer/tools/aimeva-dev.p12
 installer/*.zxp
 !installer/aimeva.zxp
 installer/*.p12

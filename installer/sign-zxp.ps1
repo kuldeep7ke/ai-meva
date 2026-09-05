@@ -8,7 +8,7 @@
 #
 # The dev cert (installer\tools\aimeva-dev.p12, password "aimeva-dev") is a
 # throwaway local identity - never use it to impersonate a real publisher.
-# It is gitignored; the script regenerates it if missing.
+# It is tracked in the repo for reproducibility; the script regenerates it if missing.
 $ErrorActionPreference = "Stop"
 
 $root  = Split-Path -Parent $MyInvocation.MyCommand.Path

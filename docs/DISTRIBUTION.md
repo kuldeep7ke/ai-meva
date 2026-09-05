@@ -39,9 +39,9 @@ installer\sign-zxp.ps1
 What it does:
 
 1. Rebuilds the staging dir from `extension/` (signed package always matches source).
-2. Generates a throwaway self-signed dev cert (`installer\tools\aimeva-dev.p12`, gitignored;
-   regenerated automatically if missing) — needs Adobe's `ZXPSignCmd.exe`, also in
-   `installer\tools\` (download once from Adobe-CEP/CEP-Resources → `ZXPSignCMD/4.1.3/x64`).
+2. Generates a throwaway self-signed dev cert (`installer\tools\aimeva-dev.p12`, tracked
+   in the repo for reproducibility; regenerated automatically if missing) — needs Adobe's
+   `ZXPSignCmd.exe`, also in `installer\tools\` (tracked; auto-downloaded if missing).
 3. Signs offline (no timestamp server) and runs `ZXPSignCmd -verify` + checks
    `META-INF/signatures.xml` is in the archive.
 

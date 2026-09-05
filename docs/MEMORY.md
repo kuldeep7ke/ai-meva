@@ -108,8 +108,8 @@ instant `auto_highlights`). The worker does **not** crash — it's genuinely slo
 Consequence: default query paths avoid vision; the scene endpoint defaults to `frames=1`.
 
 **Git hygiene — do NOT commit:** `.venv/`, `ai-workers/bin/*.exe*`, `scratch/`,
-`installer/dist/`, `installer/tools/` (ZXPSignCmd + dev `.p12`), `*.zxp`,
-`ai-meva-plugin/`, `*.egg-info/`.
+`installer/dist/`, anything else under `installer/tools/` (only `ZXPSignCmd.exe` + dev
+`.p12` are tracked), `ai-meva-plugin/`, `*.egg-info/`.
 
 ---
 
