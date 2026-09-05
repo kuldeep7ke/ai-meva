@@ -1,0 +1,6 @@
+{
+  "name": "aimeva-tests",
+  "private": true,
+  "type": "module",
+  "description": "VM harness for extension/jsx/hostscript.jsx - no external deps needed."
+}

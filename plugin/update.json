@@ -1,0 +1,10 @@
+{
+  "schema": 1,
+  "version": "0.1.0",
+  "name": "aimeva",
+  "notes": "Public aimeva build. Auto-update fetches this file from the repo, then downloads zxp_url.",
+  "zxp_url": "https://github.com/kuldeep7ke/aimeva/releases/latest/download/aimeva.zxp",
+  "update_url": "https://raw.githubusercontent.com/kuldeep7ke/aimeva/master/plugin/update.json",
+  "models_url": "https://raw.githubusercontent.com/kuldeep7ke/aimeva/master/plugin/models.json",
+  "manual_download": "https://github.com/kuldeep7ke/aimeva/releases"
+}

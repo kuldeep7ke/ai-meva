@@ -1,0 +1,28 @@
+# build outputs
+extension/dist/
+extension/build/
+installer/dist/
+installer/tools/
+installer/*.zxp
+installer/*.p12
+installer/*.cer
+ai-workers/.venv/
+ai-workers/__pycache__/
+**/__pycache__/
+ai-workers/data/
+tests/node_modules/
+
+# user/private data
+.env
+*.db
+*.db-shm
+*.db-wal
+# media scratch
+ai-workers/scratch/
+
+# frozen legacy UXP plugin (rebuild is CEP-only)
+ai-meva-plugin/
+
+# large vendored binaries + editable install metadata (worker falls back to PATH ffmpeg)
+ai-workers/bin/
+*.egg-info/

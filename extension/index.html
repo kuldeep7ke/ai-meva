@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Aimeva</title>
+  <link rel="stylesheet" href="css/aimeva.css" />
+  <script src="js/CSInterface.js"></script>
+</head>
+<body>
+  <div id="app">
+    <header>
+      <span class="logo">A</span>
+      <span class="title">Aimeva</span>
+      <span class="statusdot" id="hostDot" title="Premiere host"></span>
+      <span class="statusdot" id="workerDot" title="AI worker"></span>
+      <span class="meta" id="versionTag"></span>
+    </header>
+
+    <nav class="tabs" id="tabs">
+      <button data-tab="autocut" class="active">Auto-Edit</button>
+      <button data-tab="sound">Sound</button>
+      <button data-tab="reframe">Reframe</button>
+      <button data-tab="ailab">AI Lab</button>
+    </nav>
+
+    <main>
+
+      <!-- ===================== AUTO-EDIT ===================== -->
+      <section class="tab active" id="tab-autocut">
+        <div class="banner" id="updateBanner" style="display:none"></div>
+
+        <div class="card">
+          <h3>Sequence</h3>
+          <div class="row">
+            <input type="text" id="envSummary" readonly value="loading..." />
+            <button class="btn ghost small" id="btnRefreshEnv">Refresh</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Beat-sync cuts</h3>
+          <label>Intensity (1-5)</label>
+          <input type="range" id="beatIntensity" min="1" max="5" value="3" step="1" />
+          <div class="row" style="margin-top:8px">
+            <button class="btn grow" id="btnAnalyzeBeats">Analyze beats</button>
+          </div>
+          <div class="out" id="beatOut"></div>
+          <div class="pills" id="beatPills"></div>
+          <div class="row" style="margin-top:8px">
+            <button class="btn ghost small" id="btnAddBeatMarkers">Marker beats</button>
+            <button class="btn ghost small" id="btnAutoCut">Auto-cut (markers)</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Silence removal</h3>
+          <div class="row">
+            <div class="grow">
+              <label>Min gap (sec)</label>
+              <input type="number" id="silenceMin" value="0.6" step="0.1" min="0.1" />
+            </div>
+            <div class="grow">
+              <label>Threshold (dB)</label>
+              <input type="number" id="silenceThresh" value="-35" step="1" min="-60" max="0" />
+            </div>
+          </div>
+          <div class="row" style="margin-top:8px">
+            <button class="btn grow" id="btnFindSilence">Find silence</button>
+          </div>
+          <div class="out" id="silenceOut"></div>
+          <div class="row" style="margin-top:8px">
+            <button class="btn ghost small" id="btnMarkSilence">Mark gap starts</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Highlights (AI)</h3>
+          <div class="row">
+            <div class="grow">
+              <label>Scene model</label>
+              <select id="sceneModel"></select>
+            </div>
+          </div>
+          <div class="row" style="margin-top:8px">
+            <button class="btn grow" id="btnFindHighlights">Find highlights</button>
+          </div>
+          <div class="out" id="hlOut"></div>
+          <div class="row" style="margin-top:8px">
+            <button class="btn ghost small" id="btnMarkHighlights">Marker highlights</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================== SOUND ===================== -->
+      <section class="tab" id="tab-sound">
+        <div class="card">
+          <h3>Sound design</h3>
+          <label>Describe the sound (e.g. "dark cinematic riser, 90 BPM")</label>
+          <textarea id="soundPrompt" placeholder="ambient pad, deep sub bass, 90 BPM..."></textarea>
+          <div class="row">
+            <div class="grow">
+              <label>Duration (sec)</label>
+              <input type="number" id="soundDur" value="8" step="1" min="1" />
+            </div>
+            <div class="grow">
+              <label>BPM (0 = follow clip)</label>
+              <input type="number" id="soundBpm" value="0" step="1" min="0" />
+            </div>
+            <div class="grow">
+              <label>Engine</label>
+              <select id="soundEngine">
+                <option value="auto">Auto</option>
+                <option value="local">Local synth</option>
+                <option value="cloud">Cloud model</option>
+              </select>
+            </div>
+          </div>
+          <div class="row" style="margin-top:8px">
+            <button class="btn grow" id="btnGenSound">Generate sound</button>
+          </div>
+          <div class="out" id="soundOut"></div>
+          <div class="row" style="margin-top:8px">
+            <button class="btn ghost small" id="btnInsertSound">Insert at playhead</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================== REFRAME ===================== -->
+      <section class="tab" id="tab-reframe">
+        <div class="card">
+          <h3>Reframe clip</h3>
+          <div class="row">
+            <div class="grow">
+              <label>Target ratio</label>
+              <select id="reframeRatio">
+               <option value="9:16">9:16 (vertical)</option>
+               <option value="1:1">1:1 (square)</option>
+               <option value="16:9" selected>16:9 (wide)</option>
+               <option value="21:9">21:9 (ultra)</option>
+              </select>
+            </div>
+            <div class="grow">
+              <label>Mode</label>
+              <select id="reframeMode">
+                <option value="smart-crop" selected>Smart center crop</option>
+                <option value="edge-extension">Edge extension</option>
+                <option value="subject-tracking">Subject tracking</option>
+              </select>
+            </div>
+          </div>
+          <div class="row" style="margin-top:8px">
+            <button class="btn grow" id="btnPreviewReframe">Preview (analyze)</button>
+          </div>
+          <div class="out" id="reframeOut"></div>
+          <div class="row" style="margin-top:8px">
+            <button class="btn ghost small" id="btnApplyReframe">Apply to selected clip</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================== AI LAB ===================== -->
+      <section class="tab" id="tab-ailab">
+        <div class="card">
+          <h3>Models (free + local + opencode auto)</h3>
+          <div class="row" style="margin-bottom:6px">
+            <button class="btn ghost small" id="btnRefreshModels">Refresh models</button>
+            <span class="meta" id="modelCount" style="font-size:11px;color:var(--muted)"></span>
+          </div>
+          <div class="model-grid" id="modelGrid" style="max-height:160px;overflow-y:auto"></div>
+        </div>
+
+        <div class="card">
+          <h3>Tasks</h3>
+          <select id="aiTask">
+            <option value="chat">Chat / ask anything</option>
+            <option value="describe">Describe selected clip (vision)</option>
+            <option value="script">Write voiceover script</option>
+            <option value="title">Suggest titles</option>
+            <option value="captions">Write captions for clips</option>
+          </select>
+          <label>Prompt / question</label>
+          <textarea id="aiPrompt" placeholder="Optional. Blank = automatic."></textarea>
+          <div class="row" style="margin-top:8px">
+            <button class="btn grow" id="btnRunTask">Run</button>
+          </div>
+          <div class="out" id="aiOut"></div>
+        </div>
+
+        <div class="card">
+          <h3>Agents</h3>
+          <div class="model-grid" id="agentGrid" style="max-height:150px;overflow-y:auto"></div>
+        </div>
+
+        <div class="card">
+          <h3>MCP tools</h3>
+          <div class="row" style="margin-bottom:6px">
+            <button class="btn ghost small" id="btnRefreshMcp">Refresh tools</button>
+          </div>
+          <div class="model-grid" id="mcpGrid" style="max-height:150px;overflow-y:auto"></div>
+        </div>
+      </section>
+
+    </main>
+
+    <footer>
+      <button class="btn ghost small" id="btnSelfTest">Self-test</button>
+      <button class="btn ghost small" id="btnCheckUpdate">Check update</button>
+      <span class="spacer"></span>
+      <span id="footerLog">ready</span>
+    </footer>
+  </div>
+
+  <script src="js/config.js"></script>
+  <script src="js/host.js"></script>
+  <script src="js/worker.js"></script>
+  <script src="js/models.js"></script>
+  <script src="js/updater.js"></script>
+  <script src="js/ui.js"></script>
+</body>
+</html>

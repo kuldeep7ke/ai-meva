@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "aimeva-worker"
+version = "0.1.0"
+description = "Aimeva AI worker - local media analysis, sound, reframe, agents, MCP, opencode model discovery"
+requires-python = ">=3.9"
+dependencies = [
+  "fastapi>=0.110",
+  "uvicorn>=0.29",
+  "requests>=2.31",
+  "numpy>=1.24",
+]
+
+[tool.setuptools]
+packages = ["ai_workers"]

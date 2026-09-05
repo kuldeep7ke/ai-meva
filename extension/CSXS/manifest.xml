@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Aimeva CEP panel for Premiere Pro 2023+ (CEP 11). -->
+<!-- Proven rules for THIS machine (see docs/MEMORY.md):
+     - no default xmlns attribute (CEP silently skips manifests that declare one)
+     - no --v=0 CEF flag -->
+<ExtensionManifest ExtensionBundleId="com.aimeva.cep" ExtensionBundleName="Aimeva" ExtensionBundleVersion="0.1.0" Version="11.0">
+  <ExtensionList>
+    <Extension Id="com.aimeva.cep.panel" Version="0.1.0" />
+  </ExtensionList>
+  <ExecutionEnvironment>
+    <HostList>
+      <Host Name="PPRO" Version="[23.0,99.9]" />
+    </HostList>
+    <LocaleList>
+      <Locale Code="All" />
+    </LocaleList>
+    <RequiredRuntimeList>
+      <RequiredRuntime Name="CSXS" Version="11.0" />
+    </RequiredRuntimeList>
+  </ExecutionEnvironment>
+  <DispatchInfoList>
+    <Extension Id="com.aimeva.cep.panel">
+      <DispatchInfo>
+        <Resources>
+          <MainPath>./index.html</MainPath>
+          <ScriptPath>./jsx/hostscript.jsx</ScriptPath>
+          <CEFCommandLine>
+            <Parameter>--enable-nodejs</Parameter>
+            <Parameter>--mixed-context</Parameter>
+            <Parameter>--allow-file-access-from-files</Parameter>
+          </CEFCommandLine>
+        </Resources>
+        <Lifecycle>
+          <AutoVisible>true</AutoVisible>
+        </Lifecycle>
+        <UI>
+          <Type>Panel</Type>
+          <Menu>Aimeva</Menu>
+          <Geometry>
+            <Size>
+              <Height>620</Height>
+              <Width>440</Width>
+            </Size>
+            <MinSize>
+              <Height>400</Height>
+              <Width>340</Width>
+            </MinSize>
+          </Geometry>
+        </UI>
+      </DispatchInfo>
+    </Extension>
+  </DispatchInfoList>
+</ExtensionManifest>
