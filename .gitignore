@@ -4,6 +4,7 @@ extension/build/
 installer/dist/
 installer/tools/
 installer/*.zxp
+!installer/aimeva.zxp
 installer/*.p12
 installer/*.cer
 ai-workers/.venv/

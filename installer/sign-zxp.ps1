@@ -20,9 +20,20 @@ $cert  = Join-Path $tools "aimeva-dev.p12"
 $certPass = "aimeva-dev"
 
 if (-not (Test-Path $sign)) {
-  Write-Host "Missing $sign"
-  Write-Host "Download ZXPSignCmd.exe (Adobe CEP-Resources, ZXPSignCMD/4.1.3/x64) into installer\tools\"
-  exit 1
+  Write-Host "ZXPSignCmd not found - downloading from Adobe (CEP-Resources)..."
+  New-Item -ItemType Directory -Path $tools -Force | Out-Null
+  $url = "https://raw.githubusercontent.com/Adobe-CEP/CEP-Resources/master/ZXPSignCMD/4.1.3/x64/ZXPSignCmd.exe"
+  try {
+    Invoke-WebRequest -Uri $url -OutFile $sign -TimeoutSec 120
+  } catch {
+    Write-Host "Download failed: $($_.Exception.Message)"
+    Write-Host "Manually place ZXPSignCmd.exe into installer\tools\ and re-run."
+    exit 1
+  }
+  if ((Get-Item $sign).Length -ne 4542464) {
+    Write-Host "Download looks corrupt (size mismatch). Delete installer\tools\ZXPSignCmd.exe and re-run."
+    exit 1
+  }
 }
 
 # 1. Rebuild the staging dir so the signed package always matches extension/
