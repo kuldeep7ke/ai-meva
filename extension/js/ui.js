@@ -231,6 +231,7 @@ window.AIMEVA.ui = (function () {
   function applyReframe() {
     host.dispatch("selectedClip").then(function (c) {
       if (!c || !c.selected) throw new Error("Select the clip to reframe");
+      if (c.hasVideo === false) throw new Error("Reframe needs a video clip - '" + (c.name || "") + "' has no video");
       var tf = state.reframePreview && state.reframePreview.transform;
       var args = { nodeId: c.nodeId };
       if (tf && tf.scale) args.scale = tf.scale;

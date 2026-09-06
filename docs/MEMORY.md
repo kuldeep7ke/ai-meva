@@ -138,6 +138,21 @@ Consequence: default query paths avoid vision; the scene endpoint defaults to `f
 - [x] **Docs restructured** (this session): repo-root `README.md`; `docs/` hub +
       new **MODELS.md**, **API.md**, **DEVELOPMENT.md**; USAGE/INSTALLATION/DISTRIBUTION/
       REBUILD_PLAN/MEMORY updated; all 30 `.md` local links verified.
+- [x] **RIFF error fixed (2026-09-06, beats on MP4/MOV clips).** `audio.read_wav_mono`
+      opened any file with the `wave` module → `file does not start with RIFF id` on video
+      files. Now ffmpeg pre-decodes everything to 16k mono (also fixes silent wrong-rate
+      reads of 44.1k WAVs); silent/no-audio files return a clear `no decodable audio ...`
+      message as HTTP 200 + `{error}` (panel-ready shape). Verified live: mp4-with-audio
+      analyzes, 120bpm wav still 117.2/23 beats, silent mp4 errors cleanly.
+- [x] **insertSound `Illegal Parameter type` fixed (2026-09-06, log line 425).** `toTime`
+      passed a tick NUMBER to `new Time()` (ctor takes no tick arg) → fell back to a raw
+      number → `setPlayerPosition(number)` rejected. Now: `insertClip` at explicit ticks is
+      primary (no playhead move; `-1` video track when audioOnly), playhead+`createInsertion`
+      (single-arg) is fallback, `toTime` sets `.ticks`. Harness asserts track routing +
+      fallback; 23/23.
+- [x] **Reframe-on-audio confusion fixed.** Audio clips have no Motion effect — host error now
+      names the clip (`'<name>' has no Motion effect ... select a video clip`) and the panel
+      pre-checks `hasVideo === false` before the round-trip.
 - [x] **Timebase fixed (2026-09-06, from live self-test `fps:0`).** `Sequence.timebase`
       is ticks-per-FRAME as a string (`"10594584000"` @23.976), not seconds — old code did
       `ticks * tb` and `fps = 1/tb`. Now: `TICKS_PER_SECOND = 254016000000`,
@@ -177,9 +192,10 @@ Consequence: default query paths avoid vision; the scene endpoint defaults to `f
       `kuldeep7ke/aimeva` **master**.
 
 ### Uncommitted work
-- [x] All of the above committed as `39ac395` and pushed to `master`; system install
-      refreshed (elevated robocopy, all markers verified in
-      `C:\Program Files\Common Files\Adobe\CEP\extensions\com.aimeva.cep`).
+- [x] All of the above committed and pushed; system install refreshed (elevated robocopy,
+      markers verified in `C:\Program Files\Common Files\Adobe\CEP\extensions\com.aimeva.cep`).
+      Latest: RIFF/ffmpeg-decode fix, insertClip ticks-primary, reframe-audio messaging,
+      tests 23/23 — committed below.
 
 ### Open risks & next steps
 - [ ] **Acceptance gate:** run Settings → **Self Test** inside real Premiere Pro 2023

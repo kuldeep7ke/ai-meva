@@ -5,6 +5,10 @@ estimate, and a snappy peak picker - no librosa/numba dependency.
 """
 from __future__ import annotations
 
+import os
+import shutil
+import subprocess
+import tempfile
 import wave
 
 import numpy as np
@@ -15,12 +19,67 @@ HOP = 512
 FPS = SR / HOP
 
 
+def _decode_to_wav(src: str) -> tuple[str, bool, str | None]:
+    """Decode any ffmpeg-readable media to 16kHz mono s16 WAV in a temp file.
+
+    Returns (wav_path, is_temp, decode_err). On missing ffmpeg or failed
+    decode, falls back to (src, False, err-or-None), letting wave.open raise
+    the real error - read_wav_mono then prefers the clear decode_err.
+    """
+    ff = shutil.which("ffmpeg")
+    if not ff:
+        return src, False, None
+    fd, tmp = tempfile.mkstemp(prefix="aimeva_dec_", suffix=".wav")
+    os.close(fd)
+    try:
+        proc = subprocess.run(
+            [ff, "-y", "-v", "error", "-i", src,
+             "-ac", "1", "-ar", str(SR), "-c:a", "pcm_s16le", tmp],
+            capture_output=True, text=True, timeout=300)
+        if proc.returncode != 0 or os.path.getsize(tmp) == 0:
+            tail = [ln for ln in (proc.stderr or "").strip().splitlines() if ln.strip()]
+            reason = " / ".join(tail[-2:]) if tail else "unknown ffmpeg error"
+            try:
+                os.remove(tmp)
+            except OSError:
+                pass
+            return src, False, "no decodable audio in " + src + " (ffmpeg: " + reason + ")"
+        return tmp, True, None
+    except subprocess.TimeoutExpired:
+        try:
+            os.remove(tmp)
+        except OSError:
+            pass
+        return src, False, "timed out decoding " + src
+    except Exception as e:  # e.g. missing input file
+        try:
+            os.remove(tmp)
+        except OSError:
+            pass
+        return src, False, str(e) or ("cannot read " + src)
+
+
 def read_wav_mono(path: str):
-    with wave.open(path, "rb") as w:
-        ch = w.getnchannels()
-        raw = np.frombuffer(w.readframes(w.getnframes()), dtype=np.int16).astype(np.float32)
-        if ch > 1:
-            raw = raw[::ch]
+    wav, is_temp, decode_err = _decode_to_wav(path)
+    try:
+        with wave.open(wav, "rb") as w:
+            ch = w.getnchannels()
+            raw = np.frombuffer(w.readframes(w.getnframes()), dtype=np.int16).astype(np.float32)
+            if ch > 1:
+                raw = raw[::ch]
+    except wave.Error:
+        if decode_err:
+            raise ValueError(decode_err)
+        if not shutil.which("ffmpeg"):
+            raise ValueError(
+                "unsupported audio format (not a WAV and no ffmpeg to decode it): " + path)
+        raise
+    finally:
+        if is_temp:
+            try:
+                os.remove(wav)
+            except OSError:
+                pass
     return raw / 32768.0
 
 

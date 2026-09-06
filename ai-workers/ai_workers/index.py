@@ -140,6 +140,10 @@ async def analyze_beats(body: AudioReq):
         else:
             raise HTTPException(400, f"mode must be beats|silence, got {mode}")
         return res
+    except ValueError as e:
+        # input problem (e.g. clip has no decodable audio) - graceful 200 + error,
+        # the shape the panel already renders (same as the vision fallback pattern).
+        return {"error": str(e), "audio": body.audio or "", "mode": mode}
     except Exception as e:
         return _err(e)
 

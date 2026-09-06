@@ -117,7 +117,10 @@ function buildPremiere(opt) {
           getTrackItem() { return seq._selectionItem; }
         };
       },
-      insertClip(item, tick, a, b) { log.push(["insertClip", item.name, tick]); }
+      insertClip(item, tick, v, a) {
+        if (seq._failInsert) throw new Error("insertClip unavailable");
+        log.push(["insertClip", item.name, tick, v, a]);
+      }
     };
     return seq;
   }
@@ -164,6 +167,7 @@ function buildPremiere(opt) {
 
 function makeContext(opt) {
   const step = buildPremiere(opt);
+  if (opt && opt.failInsert) step.seq1._failInsert = true;
   const base = {
     app: step.app,
     $: { engineName: "ExtendScript", fileName: "hostscript.jsx", line: 1 },
@@ -287,18 +291,30 @@ test("addMarkers creates frame-accurate markers", () => {
   assert.equal(d.added[1].atSec, 4.5);
 });
 
-test("insertClip uses createInsertionAtPlayheadForProjectItem", () => {
+test("insertClip inserts at ticks on V1+A1 by default", () => {
   const c = makeContext();
   const d = expectOk(c.call("insertClip", { nodeId: "NODE-BBB", second: 3, audioOnly: false }));
   assert.equal(d.atSec, 3);
-  assert.ok(d.method.includes("createInsertion"), d.method);
+  assert.equal(d.method, "insertClip(ticks)");
+  const entry = c.__step.log.find((l) => l[0] === "insertClip");
+  assert.deepEqual([entry[3], entry[4]], [0, 0]);
 });
 
-test("insertSound imports then inserts audioOnly", () => {
+test("insertSound imports then inserts audioOnly on A1 (no video track)", () => {
   const c = makeContext();
   const d = expectOk(c.call("insertSound", { path: "C:/media/noise.wav", second: 5 }));
   assert.equal(d.atSec, 5);
   assert.equal(d.audioOnly, true);
+  assert.equal(d.method, "insertClip(ticks)");
+  const entry = c.__step.log.find((l) => l[0] === "insertClip");
+  assert.deepEqual([entry[1], entry[3], entry[4]], ["noise.wav", -1, 0]);
+});
+
+test("insertClip falls back to playhead insertion when ticks insert fails", () => {
+  const c = makeContext({ failInsert: true });
+  const d = expectOk(c.call("insertClip", { nodeId: "NODE-BBB", second: 3 }));
+  assert.equal(d.method, "createInsertionAtPlayheadForProjectItem");
+  assert.ok(c.__step.log.some((l) => l[0] === "createInsertion"));
 });
 
 test("autoCut markers + optional insert", () => {

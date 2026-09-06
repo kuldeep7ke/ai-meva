@@ -407,10 +407,11 @@ var __host = (function hostModule() {
     return { count: added.length, added: added };
   }
 
-  function toTime(sec) {
-    var seq = activeSeq();
-    if (!seq) return sec;
-    try { return new Time(secToTicks(seq, sec)); } catch (e) { return sec; }
+  function toTime(seq, sec) {
+    // Time() takes no tick argument; set ticks explicitly (string form).
+    var t = new Time();
+    try { t.ticks = String(secToTicks(seq, sec)); } catch (e) {}
+    return t;
   }
 
   function opInsertClip(params) {
@@ -422,15 +423,18 @@ var __host = (function hostModule() {
     var sec = Number(params.second);
     if (isNaN(sec) || sec < 0) sec = playheadSec(seq);
     var audioOnly = !!params.audioOnly;
-    seq.setPlayerPosition(toTime(sec));
+    var ticks = secToTicks(seq, sec);
     var method = "";
     try {
-      prj.createInsertionAtPlayheadForProjectItem(item, audioOnly);
-      method = "createInsertionAtPlayheadForProjectItem";
+      // Primary: explicit ticks + tracks. No playhead move, deterministic.
+      // (-1 = no insert on that track type.)
+      seq.insertClip(item, ticks, audioOnly ? -1 : 0, 0);
+      method = "insertClip(ticks)";
     } catch (e1) {
       try {
-        seq.insertClip(item, secToTicks(seq, sec), -1, 0);
-        method = "insertClip(frames)";
+        seq.setPlayerPosition(toTime(seq, sec));
+        prj.createInsertionAtPlayheadForProjectItem(item);
+        method = "createInsertionAtPlayheadForProjectItem";
       } catch (e2) {
         throw mkErr("insertClip failed: " + String(e1.message || e1) + " / " + String(e2.message || e2), $.line);
       }
@@ -511,6 +515,8 @@ var __host = (function hostModule() {
       if (sel.selected) ti = findTrackItemByNodeId(seq, sel.nodeId);
     }
     if (!ti) throw mkErr("no target clip (pass nodeId or select a clip)", $.line);
+    var clipName = "";
+    try { clipName = String(ti.projectItem && ti.projectItem.name || "clip"); } catch (e) {}
 
     var applied = [];
     var comps = ti.components;
@@ -521,7 +527,7 @@ var __host = (function hostModule() {
       try { dn = String(comp.displayName || comp.name || ""); } catch (e) {}
       if (dn === "Motion" || dn === "motion") { motion = comp; break; }
     }
-    if (!motion) throw mkErr("Motion component not found on clip", $.line);
+    if (!motion) throw mkErr("'" + clipName + "' has no Motion effect (audio clips can't be reframed - select a video clip)", $.line);
 
     function setProp(comp, propName, valueArray, typeName) {
       var props = comp.properties;
@@ -550,8 +556,7 @@ var __host = (function hostModule() {
       applied.push("position=" + params.positionX + "," + params.positionY);
       setProp(motion, "Position", [Number(params.positionX), Number(params.positionY)], "TWOD");
     }
-    var name = String(ti.projectItem && ti.projectItem.name || "clip");
-    return { nodeId: nodeId, clip: name, applied: applied };
+    return { nodeId: nodeId, clip: clipName || "clip", applied: applied };
   }
 
   function opSelfTest(params) {
